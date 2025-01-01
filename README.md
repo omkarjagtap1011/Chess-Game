@@ -1,4 +1,4 @@
-# Chess Engine GUI
+# Chess Engine
 
 This project implements a graphical chess interface using Tkinter, allowing users to play chess interactively on a visually rendered board. The application supports basic game modes, move validation, and turn-based play.
 
