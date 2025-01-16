@@ -1,4 +1,4 @@
-# Chess Game
+# Chess-Game
 
 Chess Game is a 2 player Chess python application. This project implements a graphical chess interface using Tkinter, allowing users to play chess interactively on a visually rendered board.
 
