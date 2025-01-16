@@ -43,7 +43,14 @@ class MoveGenerator:
 
         # Normal move (one square forward)
         if self.board.get_piece(row + direction, col) == '.':
-            moves.append((row, col, row + direction, col))
+            if (piece == 'P' and row+direction == 0) or (piece == 'p' and row+direction == 7):
+                moves.append((row, col, row + direction, col, 'Q' if piece.isupper() else 'q'))
+                moves.append((row, col, row + direction, col, 'R' if piece.isupper() else 'r'))
+                moves.append((row, col, row + direction, col, 'B' if piece.isupper() else 'b'))
+                moves.append((row, col, row + direction, col, 'N' if piece.isupper() else 'n'))
+            else:
+                moves.append((row, col, row + direction, col))
+
 
         # Double square move from the starting position
         if (piece.isupper() and row == 6) or (piece.islower() and row == 1):
@@ -55,7 +62,13 @@ class MoveGenerator:
             if 0 <= col + dc < 8:
                 target = self.board.get_piece(row + direction, col + dc)
                 if target != '.' and target.islower() != piece.islower():
-                    moves.append((row, col, row + direction, col + dc))
+                    if (piece == 'P' and row+direction == 0) or (piece == 'p' and row+direction == 7):
+                        moves.append((row, col, row + direction, col+dc, 'Q' if piece.isupper() else 'q'))
+                        moves.append((row, col, row + direction, col+dc, 'R' if piece.isupper() else 'r'))
+                        moves.append((row, col, row + direction, col+dc, 'B' if piece.isupper() else 'b'))
+                        moves.append((row, col, row + direction, col+dc, 'N' if piece.isupper() else 'n'))
+                    else:
+                        moves.append((row, col, row + direction, col + dc))
         
         # En pass moves if eligible
         if self.en_pass_possible:
@@ -190,7 +203,9 @@ class MoveGenerator:
             # check for the validity
             if(self.is_check(ct)):
                 if self.board.get_piece(move[2], move[3]).lower() == 'k' and move in [(0, 4, 0, 5), (0, 4, 0, 3), (7, 4, 7, 5), (7, 4, 7, 3)]:
-                    moves.remove((move[0], move[1], move[0], move[3] + (move[3] - move[1])))
+                    temp = (move[0], move[1], move[0], move[3] + (move[3] - move[1]))
+                    if temp in moves:
+                        moves.remove(temp)
                 moves.pop(i)
             else:
                 i+=1

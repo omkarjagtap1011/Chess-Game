@@ -16,9 +16,16 @@ class ChessUI:
         self.screen_width = 800
         self.screen_height = 800
         self.square_size = self.screen_width // 8
-        self.animation_speed = 20
-        self.root.withdraw()  # Hide the main window initially
-        self.show_game_mode_selection()
+        self.animation_speed = 10
+        # self.root.withdraw()  # Hide the main window initially
+        # self.show_game_mode_selection()
+
+        self.setup_canvas()  # Initialize the chess UI
+        self.load_images()
+        self.draw_board()
+        self.draw_pieces()
+        # Position the main window at top-left corner
+        self.root.geometry(f"{self.screen_width}x{self.screen_height}+0+0")
 
     def setup_canvas(self):
         self.canvas = tk.Canvas(self.root, width=self.screen_width, height=self.screen_height)
@@ -45,7 +52,7 @@ class ChessUI:
                 print(f"Warning: Missing image for piece '{piece}' at {image_path}")
 
     def draw_board(self):
-        colors = ['#f0d9b5', '#b58863']
+        colors = ['#739552', '#EBECD0']
         for row in range(8):
             for col in range(8):
                 color = colors[(row + col) % 2]
@@ -53,7 +60,7 @@ class ChessUI:
                 y1 = row * self.square_size
                 x2 = x1 + self.square_size
                 y2 = y1 + self.square_size
-                self.canvas.create_rectangle(x1, y1, x2, y2, fill=color)
+                self.canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline='')
 
     def draw_pieces(self):
         for row in range(8):
@@ -88,6 +95,11 @@ class ChessUI:
                 self.highlight_moves(self.valid_moves)
             else:
                 move = (from_row, from_col, row, col)
+                sp = self.board.get_piece(from_row, from_col)
+                
+                if ((sp == 'P' and row == 0) or (sp == 'p' and row == 7)) and (from_row, from_col, row, col, 'Q') in self.valid_moves:
+                    move = self.handle_pawn_promotion(move, sp)
+                    
                 if move in self.valid_moves:
                     self.make_move(move)
                 self.selected_piece = None
@@ -103,26 +115,128 @@ class ChessUI:
                 self.remove_highlights()
 
     def highlight_moves(self, moves):
-        for move in moves:
-            to_row, to_col = move[2], move[3]
-            x1 = to_col * self.square_size
-            y1 = to_row * self.square_size
+        if moves:
+            # Highlight the starting square (from_row, from_col)
+            from_row, from_col = moves[0][0], moves[0][1]
+            x1 = from_col * self.square_size
+            y1 = from_row * self.square_size
             x2 = x1 + self.square_size
             y2 = y1 + self.square_size
-            self.canvas.create_rectangle(x1, y1, x2, y2, outline='green', width=3, tags='highlight')
+
+            # Draw the highlighted square
+            self.canvas.create_rectangle(
+                x1, y1, x2, y2, 
+                fill='#ffff33', 
+                outline='',  # No border
+                tags='highlight'
+            )
+
+            piece = self.board.get_piece(from_row, from_col)
+            if piece != '.':
+                image = self.piece_images[piece]
+                x, y = self.get_square_coords(from_row, from_col)
+                self.canvas.create_image(x, y, image=image, tags=piece)
+        for move in moves:
+            to_row, to_col = move[2], move[3]
+            
+            # Center of the square
+            x_center = to_col * self.square_size + self.square_size / 2
+            y_center = to_row * self.square_size + self.square_size / 2
+
+            # Circle radius
+            radius = 15  # Adjust for the circle size
+
+            # Calculate circle bounding box
+            x1 = x_center - radius
+            y1 = y_center - radius
+            x2 = x_center + radius
+            y2 = y_center + radius
+
+            if self.board.get_piece(to_row, to_col) == '.':
+                # Draw translucent circle
+                self.canvas.create_oval(
+                    x1, y1, x2, y2, 
+                    fill='#605D57', 
+                    outline='',  # No border
+                    stipple="gray25",  # Add transparency effect
+                    tags='highlight',
+                )
+            else:
+                # Calculate bounding box for the hollow circle
+                x1 = to_col * self.square_size + 5  # Leave a small margin
+                y1 = to_row * self.square_size + 5
+                x2 = x1 + self.square_size - 10  # Adjust for the margin
+                y2 = y1 + self.square_size - 10
+
+                # Draw a hollow circle (outline only)
+                self.canvas.create_oval(
+                    x1, y1, x2, y2, 
+                    outline='#605D57',  # Circle color
+                    width=7,  # Circle border thickness
+                    tags='highlight'
+                )
+
+                piece = self.board.get_piece(from_row, from_col)
+                image = self.piece_images[piece]
+                x, y = self.get_square_coords(from_row, from_col)
+                self.canvas.create_image(x, y, image=image, tags=piece)
+
+
 
     def remove_highlights(self):
         self.canvas.delete('highlight')
+    
+    def highlight_prev_move(self, move, piece):
+        # Highlight the starting square (from_row, from_col)
+        from_row, from_col = move[0], move[1]
+        x1 = from_col * self.square_size
+        y1 = from_row * self.square_size
+        x2 = x1 + self.square_size
+        y2 = y1 + self.square_size
+
+        # Draw the highlighted square
+        self.canvas.create_rectangle(
+            x1, y1, x2, y2, 
+            fill='#d6d653', 
+            outline='',  # No border
+            tags='prev-highlight'
+        )
+
+        # Highlight the ending square (from_row, from_col)
+        from_row, from_col = move[2], move[3]
+        x1 = from_col * self.square_size
+        y1 = from_row * self.square_size
+        x2 = x1 + self.square_size
+        y2 = y1 + self.square_size
+
+        # Draw the highlighted square
+        self.canvas.create_rectangle(
+            x1, y1, x2, y2, 
+            fill='#d6d653', 
+            outline='',  # No border
+            tags='prev-highlight'
+        )
+
+        image = self.piece_images[piece]
+        x, y = self.get_square_coords(from_row, from_col)
+        self.canvas.create_image(x, y, image=image, tags=piece)
+
+
+
+    def remove_prev_move(self):
+        self.canvas.delete('prev-highlight')
 
     def make_move(self, move):
-        from_row, from_col, to_row, to_col = move
+        from_row, from_col, to_row, to_col, *e = move
         piece = self.board.get_piece(from_row, from_col)
         captured_piece = self.board.get_piece(to_row, to_col)
 
         def finalize_move():
             # Update the board state and switch turns after animation
+            self.remove_prev_move()
             self.board.make_move(move, self.move_generator)
             self.update_canvas()
+            self.highlight_prev_move(move, piece)
             self.switch_turn()
             result = self.board.check_game_state(self.current_turn, self.move_generator)
             if result:
@@ -132,17 +246,22 @@ class ChessUI:
             # Castling animation
             self.animate_castling(from_row, from_col, to_row, to_col, piece)
             self.root.after(100, finalize_move)  # Adjust the delay to match castling animation time
+        elif len(move)==5:
+            # Handle pawn promotion
+            self.animate_move(from_row, from_col, to_row, to_col, piece)
+            self.root.after(100, finalize_move)
         else:
             # Regular move animation
             self.animate_move(from_row, from_col, to_row, to_col, piece)
             self.root.after(100, finalize_move)  # Adjust the delay to match move animation time
+        
 
 
     def animate_move(self, from_row, from_col, to_row, to_col, piece):
         from_x, from_y = self.get_square_coords(from_row, from_col)
         to_x, to_y = self.get_square_coords(to_row, to_col)
         piece_item = self.piece_items.pop((from_row, from_col))
-        total_steps = 5  # Adjust for smoother or faster animation
+        total_steps = 10  # Adjust for smoother or faster animation
         dx = (to_x - from_x) / total_steps
         dy = (to_y - from_y) / total_steps
         current_step = 0
@@ -159,8 +278,6 @@ class ChessUI:
                 # Finalize position
                 self.canvas.coords(piece_item, to_x, to_y)
                 self.piece_items[(to_row, to_col)] = piece_item
-                self.board.set_piece(to_row, to_col, piece)
-                self.board.set_piece(from_row, from_col, '.')
                 captured_item = self.piece_items.pop((to_row, to_col), None)
                 if captured_item:
                     self.canvas.delete(captured_item)
@@ -192,7 +309,7 @@ class ChessUI:
                 current_kx += king_dx
                 current_ky += king_dy
                 self.canvas.coords(king_item, current_kx, current_ky)
-                self.root.after(50, move_king, current_kx, current_ky)
+                self.root.after(10, move_king, current_kx, current_ky)
             else:
                 self.canvas.coords(king_item, king_target_x, king_target_y)
                 self.piece_items[(to_row, to_col)] = king_item
@@ -204,7 +321,7 @@ class ChessUI:
                 current_rx += rook_dx
                 current_ry += rook_dy
                 self.canvas.coords(rook_item, current_rx, current_ry)
-                self.root.after(50, move_rook, current_rx, current_ry)
+                self.root.after(10, move_rook, current_rx, current_ry)
             else:
                 self.canvas.coords(rook_item, rook_target_x, rook_target_y)
                 self.piece_items[(to_row, rook_to_col)] = rook_item
@@ -301,6 +418,74 @@ class ChessUI:
         x = (screen_width - width) // 2
         y = (screen_height - height) // 2
         window.geometry(f"{width}x{height}+{x}+{y}")
+    
+    def handle_pawn_promotion(self, move, piece):
+        # Create an overlay frame at the center of the board
+        overlay_frame = tk.Frame(self.root, bg="white", relief=tk.RAISED, bd=2)
+        overlay_width = 400
+        overlay_height = 400
+        x = (self.screen_width - overlay_width) // 2
+        y = (self.screen_height - overlay_height) // 2
+        overlay_frame.place(x=x, y=y, width=overlay_width, height=overlay_height)
+
+        # Label for pawn promotion
+        label = tk.Label(overlay_frame, text="Choose Promotion", bg="white", font=("Arial", 12))
+        label.pack(side=tk.TOP, pady=10)
+
+        # Frame to hold promotion buttons in a grid
+        button_frame = tk.Frame(overlay_frame, bg="white")
+        button_frame.pack(side=tk.TOP, pady=10)
+
+        # Configure grid layout
+        button_frame.columnconfigure(0, weight=1)
+        button_frame.columnconfigure(1, weight=1)
+        button_frame.rowconfigure(0, weight=1)
+        button_frame.rowconfigure(1, weight=1)
+
+        # Load and display images for promotion choices
+        promotion_pieces = {'Q': 'white-queen.png', 'R': 'white-rook.png',
+                            'B': 'white-bishop.png', 'N': 'white-knight.png'}
+        if piece.islower():  # Adjust image paths for black pieces
+            promotion_pieces = {key.lower(): value.replace('white', 'black') for key, value in promotion_pieces.items()}
+
+        # Variable to store the selected piece
+        selected_piece_var = tk.StringVar()
+
+        # Function to handle button press and close overlay
+        def promote_and_remove(selected_piece):
+            selected_piece_var.set(selected_piece)  # Set the variable to the selected piece
+            overlay_frame.destroy()
+
+        # Create buttons with images in a grid
+        row_idx = 0
+        col_idx = 0
+        for idx, (piece_key, image_name) in enumerate(promotion_pieces.items()):
+            image_path = os.path.join("images", image_name)
+            if os.path.exists(image_path):
+                pil_image = Image.open(image_path)
+                scaled_image = pil_image.resize((110, 110), Image.Resampling.LANCZOS)
+                img = ImageTk.PhotoImage(scaled_image)
+                btn = tk.Button(button_frame, image=img, command=lambda p=piece_key: promote_and_remove(p),
+                                borderwidth=0, highlightthickness=0, height=128, width=128)
+                btn.image = img  # Keep a reference to avoid garbage collection
+                btn.grid(row=row_idx, column=col_idx, padx=5, pady=5, sticky="nsew")
+                col_idx += 1
+                if col_idx >= 2:
+                    col_idx = 0
+                    row_idx += 1
+            else:
+                print(f"Warning: Missing promotion image at {image_path}")
+
+        # Wait for the user to select a promotion piece
+        self.root.wait_variable(selected_piece_var)
+
+        # Update the move with the selected piece
+        a, b, c, d = move
+        move = (a, b, c, d, selected_piece_var.get())
+
+        return move
+
+
 
 if __name__ == '__main__':
     root = tk.Tk()
