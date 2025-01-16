@@ -38,7 +38,7 @@ class Board:
 
     def is_valid_move(self, move):
         """Check if the move is within board bounds."""
-        from_row, from_col, to_row, to_col = move
+        from_row, from_col, to_row, to_col, *e = move
         return 0 <= from_row < 8 and 0 <= from_col < 8 and 0 <= to_row < 8 and 0 <= to_col < 8
     
     def make_move(self, move, move_generator):
@@ -48,7 +48,7 @@ class Board:
         
         move_generator.clear_en_pass()
 
-        from_row, from_col, to_row, to_col = move
+        from_row, from_col, to_row, to_col, *e = move
         piece = self.board[from_row][from_col]
         captured_piece = self.board[to_row][to_col]
 
@@ -57,8 +57,8 @@ class Board:
 
         # Handle pawn promotion and en passant
         if piece.lower() == 'p':
-            if (piece == 'P' and to_row == 0) or (piece == 'p' and to_row == 7):
-                self.board[to_row][to_col] = 'Q' if piece == 'P' else 'q'
+            if len(move) == 5:
+                self.board[to_row][to_col] = move[4]
             
             # en passant has hapened
             if (abs(from_col - to_col) == 1 and captured_piece=='.'):
@@ -116,9 +116,12 @@ class Board:
 
     def undo_move(self, move, captured_piece):
         """move: old move"""
-        from_row, from_col, to_row, to_col = move
+        from_row, from_col, to_row, to_col, *e = move
         piece = self.board[to_row][to_col]
-
+        if len(move)==5:
+            piece = 'p' if(piece.islower()) else 'P'
+            
+    
         self.board[from_row][from_col] = piece
         self.board[to_row][to_col] = captured_piece
 

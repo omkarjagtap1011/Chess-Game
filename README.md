@@ -1,6 +1,8 @@
-# Chess Engine GUI
+# Chess Game
 
-This project implements a graphical chess interface using Tkinter, allowing users to play chess interactively on a visually rendered board. The application supports basic game modes, move validation, and turn-based play.
+Chess Game is a 2 player Chess python application. This project implements a graphical chess interface using Tkinter, allowing users to play chess interactively on a visually rendered board.
+
+![screenshot](./output.png)
 
 ## Features
 
@@ -19,12 +21,6 @@ This project implements a graphical chess interface using Tkinter, allowing user
 - Players can select and move pieces by clicking on the board.
 - Highlights valid moves for the selected piece.
 - Enforces turn-based play (white and black alternate turns).
-
-### Game Modes
-
-1. **Human vs. Human**: Fully functional mode where two players can play against each other.
-2. **Human vs. AI**: Placeholder mode with a "Coming Soon" message. AI integration is planned.
-3. **Analyze Mode**: Placeholder mode with a "Coming Soon" message. Will include advanced chess analysis features.
 
 ### Move Handling
 
@@ -62,6 +58,7 @@ chess-engine/
 ├── move_generator.py     # Module for generating and filtering moves.
 ├── chess_ui.py           # Main GUI script.
 ├── README.md             # Project documentation.
+
 ```
 
 ## Usage
@@ -89,11 +86,7 @@ chess-engine/
 
    - Add features like move suggestions, blunder detection, and alternative lines using the move generator.
 
-3. **Error Handling**:
-
-   - Improve robustness for missing images or invalid configurations.
-
-4. **Customizability**:
+3. **Customizability**:
    - Allow customization of board and piece colors and square sizes.
 
 ## Dependencies
